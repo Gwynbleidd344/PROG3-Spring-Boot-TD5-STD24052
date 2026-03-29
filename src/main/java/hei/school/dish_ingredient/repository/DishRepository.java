@@ -18,7 +18,7 @@ public class DishRepository {
         this.dataSource = dataSource;
     }
 
-    public Dish findDishById(Integer id) {
+    public Dish findById(Integer id) {
         String query = "SELECT id, name, dish_type, selling_price FROM dish WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
             PreparedStatement ps = conn.prepareStatement(query)) {
