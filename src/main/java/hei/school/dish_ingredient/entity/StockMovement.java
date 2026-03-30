@@ -1,22 +1,16 @@
 package hei.school.dish_ingredient.entity;
 
+import lombok.Data;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 import java.time.Instant;
 
 import hei.school.dish_ingredient.entity.enums.MovementTypeEnum;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode
-@ToString
 public class StockMovement {
     private int              id;
     private StockValue       value;
