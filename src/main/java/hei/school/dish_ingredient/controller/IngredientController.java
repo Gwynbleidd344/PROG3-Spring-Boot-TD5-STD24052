@@ -2,8 +2,11 @@ package hei.school.dish_ingredient.controller;
 
 import hei.school.dish_ingredient.entity.Ingredient;
 import hei.school.dish_ingredient.entity.StockMovement;
+import hei.school.dish_ingredient.entity.StockMovementCreate;
 import hei.school.dish_ingredient.entity.StockValue;
 import hei.school.dish_ingredient.service.IngredientService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,5 +56,14 @@ public class IngredientController {
         @RequestParam(required = false) String to
     ) {
         return ResponseEntity.ok(ingredientService.getStockMovements(id, from, to));
+    }
+
+    @PostMapping("/{id}/stockMovements")
+    public ResponseEntity<List<StockMovement>> createStockMovements(
+            @PathVariable int id,
+            @RequestBody(required = false) List<StockMovementCreate> toCreate
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ingredientService.createStockMovements(id, toCreate));
     }
 }

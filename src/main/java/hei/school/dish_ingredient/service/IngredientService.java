@@ -3,6 +3,7 @@ package hei.school.dish_ingredient.service;
 import hei.school.dish_ingredient.entity.enums.CategoryEnum;
 import hei.school.dish_ingredient.entity.Ingredient;
 import hei.school.dish_ingredient.entity.StockMovement;
+import hei.school.dish_ingredient.entity.StockMovementCreate;
 import hei.school.dish_ingredient.entity.StockValue;
 import hei.school.dish_ingredient.entity.enums.UnitTypeEnum;
 import hei.school.dish_ingredient.exception.BadRequestException;
@@ -63,7 +64,7 @@ public class IngredientService {
             instant = Instant.parse(at);
         } catch (Exception e) {
             throw new BadRequestException(
-                    "Invalid date format for `at`. Expected ISO-8601, e.g. 2024-01-06T12:00:00Z");
+                    "Invalid date format for `at`., e.g. 2024-01-06T12:00:00Z");
         }
 
         Ingredient ingredient = getIngredientById(id);
@@ -83,7 +84,7 @@ public class IngredientService {
         return ingredientRepository.findStockMovements(
                 id, parseInstant(from, "from"), parseInstant(to, "to"));
     }
- 
+    
     public List<StockMovement> createStockMovements(int id, List<StockMovementCreate> toCreate) {
         if (toCreate == null || toCreate.isEmpty()) {
             throw new BadRequestException("Request body is mandatory and must not be empty.");
@@ -99,7 +100,7 @@ public class IngredientService {
         } catch (DateTimeException e) {
             throw new BadRequestException(
                     "Invalid date format for `" + paramName + "`. " +
-                    "Expected ISO-8601, e.g. 2024-01-05T08:00:00Z");
+                    ", e.g. 2024-01-05T08:00:00Z");
         }
     }
 }
