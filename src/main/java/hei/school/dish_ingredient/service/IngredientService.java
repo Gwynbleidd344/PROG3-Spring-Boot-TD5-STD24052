@@ -64,7 +64,7 @@ public class IngredientService {
             instant = Instant.parse(at);
         } catch (Exception e) {
             throw new BadRequestException(
-                    "Invalid date format for `at`., e.g. 2024-01-06T12:00:00Z");
+                    "Invalid date format for `at`, e.g. 2024-01-06T12:00:00Z");
         }
 
         Ingredient ingredient = getIngredientById(id);

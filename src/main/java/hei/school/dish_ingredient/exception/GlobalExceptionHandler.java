@@ -20,7 +20,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<String> handleRuntime(RuntimeException e) {
-        // Convertit les RuntimeException portant un message "*.id=* is not found" en 404
         String msg = e.getMessage();
         if (msg != null && msg.contains("is not found")) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(msg);
