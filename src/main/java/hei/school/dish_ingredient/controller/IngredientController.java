@@ -1,6 +1,7 @@
 package hei.school.dish_ingredient.controller;
 
 import hei.school.dish_ingredient.entity.Ingredient;
+import hei.school.dish_ingredient.entity.StockMovement;
 import hei.school.dish_ingredient.entity.StockValue;
 import hei.school.dish_ingredient.service.IngredientService;
 import org.springframework.http.ResponseEntity;
@@ -43,5 +44,14 @@ public class IngredientController {
             @RequestParam(required = false) String unit
     ) {
         return ResponseEntity.ok(ingredientService.getStockValueAt(id, at, unit));
+    }
+
+    @GetMapping("/{id}/stockMovements")
+    public ResponseEntity<List<StockMovement>> getIngredientStockMovements(
+        @PathVariable int id,
+        @RequestParam(required = false) String from,
+        @RequestParam(required = false) String to
+    ) {
+        return ResponseEntity.ok(ingredientService.getStockMovements(id, from, to));
     }
 }

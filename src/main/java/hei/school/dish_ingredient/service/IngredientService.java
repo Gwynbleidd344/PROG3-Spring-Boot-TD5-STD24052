@@ -2,6 +2,7 @@ package hei.school.dish_ingredient.service;
 
 import hei.school.dish_ingredient.entity.enums.CategoryEnum;
 import hei.school.dish_ingredient.entity.Ingredient;
+import hei.school.dish_ingredient.entity.StockMovement;
 import hei.school.dish_ingredient.entity.StockValue;
 import hei.school.dish_ingredient.entity.enums.UnitTypeEnum;
 import hei.school.dish_ingredient.exception.BadRequestException;
@@ -9,6 +10,7 @@ import hei.school.dish_ingredient.exception.NotFoundException;
 import hei.school.dish_ingredient.repository.IngredientRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.util.List;
 
@@ -75,5 +77,29 @@ public class IngredientService {
 
     public Ingredient saveIngredient(Ingredient ingredient) {
         return ingredientRepository.saveIngredient(ingredient);
+    }
+        public List<StockMovement> getStockMovements(int id, String from, String to) {
+        getIngredientById(id);
+        return ingredientRepository.findStockMovements(
+                id, parseInstant(from, "from"), parseInstant(to, "to"));
+    }
+ 
+    public List<StockMovement> createStockMovements(int id, List<StockMovementCreate> toCreate) {
+        if (toCreate == null || toCreate.isEmpty()) {
+            throw new BadRequestException("Request body is mandatory and must not be empty.");
+        }
+        getIngredientById(id);
+        return ingredientRepository.createStockMovements(id, toCreate);
+    }
+
+    private Instant parseInstant(String value, String paramName) {
+        if (value == null || value.isBlank()) return null;
+        try {
+            return Instant.parse(value);
+        } catch (DateTimeException e) {
+            throw new BadRequestException(
+                    "Invalid date format for `" + paramName + "`. " +
+                    "Expected ISO-8601, e.g. 2024-01-05T08:00:00Z");
+        }
     }
 }

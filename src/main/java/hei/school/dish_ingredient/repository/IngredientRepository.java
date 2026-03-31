@@ -1,16 +1,14 @@
 package hei.school.dish_ingredient.repository;
 
-import hei.school.dish_ingredient.entity.Ingredient;
-import hei.school.dish_ingredient.entity.StockMovement;
-import hei.school.dish_ingredient.entity.StockValue;
+import hei.school.dish_ingredient.entity.*;
 import hei.school.dish_ingredient.entity.enums.CategoryEnum;
 import hei.school.dish_ingredient.entity.enums.MovementTypeEnum;
 import hei.school.dish_ingredient.entity.enums.UnitTypeEnum;
-
 import org.springframework.stereotype.Repository;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,16 +25,14 @@ public class IngredientRepository {
         String sql = "SELECT id, name, price, category FROM ingredient WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
             if (!rs.next()) {
                 throw new RuntimeException("Ingredient.id=" + id + " is not found");
             }
             Ingredient ingredient = mapIngredient(rs);
-            ingredient.setStockMovementList(findMovementsByIngredientId(conn, id));
+            ingredient.setStockMovementList(findMovementsByIngredientId(conn, id, null, null));
             return ingredient;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -47,19 +43,17 @@ public class IngredientRepository {
         String sql = "SELECT id, name, price, category FROM ingredient ORDER BY id LIMIT ? OFFSET ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, size);
             ps.setInt(2, offset);
             ResultSet rs = ps.executeQuery();
-
             List<Ingredient> list = new ArrayList<>();
             while (rs.next()) {
                 Ingredient ingredient = mapIngredient(rs);
-                ingredient.setStockMovementList(findMovementsByIngredientId(conn, ingredient.getId()));
+                ingredient.setStockMovementList(
+                        findMovementsByIngredientId(conn, ingredient.getId(), null, null));
                 list.add(ingredient);
             }
             return list;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -74,9 +68,7 @@ public class IngredientRepository {
                 "LEFT JOIN dish_ingredient di ON di.id_ingredient = i.id " +
                 "LEFT JOIN dish d ON d.id = di.id_dish " +
                 "WHERE 1=1 ");
-
         List<Object> params = new ArrayList<>();
-
         if (ingredientName != null) {
             sql.append("AND i.name ILIKE ? ");
             params.add("%" + ingredientName + "%");
@@ -92,10 +84,8 @@ public class IngredientRepository {
         sql.append("ORDER BY i.id LIMIT ? OFFSET ?");
         params.add(size);
         params.add(offset);
-
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql.toString())) {
-
             for (int i = 0; i < params.size(); i++) {
                 ps.setObject(i + 1, params.get(i));
             }
@@ -105,7 +95,46 @@ public class IngredientRepository {
                 list.add(mapIngredient(rs));
             }
             return list;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
+    public List<StockMovement> findStockMovements(int ingredientId, Instant from, Instant to) {
+        try (Connection conn = dataSource.getConnection()) {
+            return findMovementsByIngredientId(conn, ingredientId, from, to);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<StockMovement> createStockMovements(int ingredientId,
+                                                    List<StockMovementCreate> toCreate) {
+        String sql = "INSERT INTO stock_movement (id_ingredient, quantity, type, unit) " +
+                     "VALUES (?, ?, ?::mouvement_type, ?::unit_type) " +
+                     "RETURNING id, quantity, type, unit, creation_datetime";
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                List<StockMovement> created = new ArrayList<>();
+                for (StockMovementCreate item : toCreate) {
+                    try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                        ps.setInt(1, ingredientId);
+                        ps.setDouble(2, item.getValue());
+                        ps.setString(3, item.getType().name());
+                        ps.setString(4, item.getUnit().name());
+                        ResultSet rs = ps.executeQuery();
+                        if (rs.next()) {
+                            created.add(mapStockMovement(rs));
+                        }
+                    }
+                }
+                conn.commit();
+                return created;
+            } catch (Exception e) {
+                conn.rollback();
+                throw new RuntimeException(e);
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -151,7 +180,8 @@ public class IngredientRepository {
                     }
                 }
                 conn.commit();
-                saved.setStockMovementList(findMovementsByIngredientId(conn, saved.getId()));
+                saved.setStockMovementList(
+                        findMovementsByIngredientId(conn, saved.getId(), null, null));
                 return saved;
             } catch (Exception e) {
                 conn.rollback();
@@ -209,12 +239,11 @@ public class IngredientRepository {
         }
     }
 
-    private void insertStockMovement(Connection conn, int ingredientId, StockMovement movement) throws SQLException {
-        String sql = """
-                INSERT INTO stock_movement (id, id_ingredient, quantity, type, unit, creation_datetime)
-                VALUES (?, ?, ?, ?::mouvement_type, ?::unit_type, ?)
-                ON CONFLICT (id) DO NOTHING
-                """;
+    private void insertStockMovement(Connection conn, int ingredientId,
+                                     StockMovement movement) throws SQLException {
+        String sql = "INSERT INTO stock_movement (id, id_ingredient, quantity, type, unit, creation_datetime) " +
+                     "VALUES (?, ?, ?, ?::mouvement_type, ?::unit_type, ?) " +
+                     "ON CONFLICT (id) DO NOTHING";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             if (movement.getId() > 0) {
                 ps.setInt(1, movement.getId());
@@ -230,29 +259,46 @@ public class IngredientRepository {
         }
     }
 
-    List<StockMovement> findMovementsByIngredientId(Connection conn,
-                                                    int ingredientId) throws SQLException {
-        String sql = "SELECT id, quantity, type, unit, creation_datetime " +
-                     "FROM stock_movement WHERE id_ingredient = ? ORDER BY creation_datetime";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, ingredientId);
+    List<StockMovement> findMovementsByIngredientId(Connection conn, int ingredientId,
+                                                    Instant from, Instant to) throws SQLException {
+        StringBuilder sql = new StringBuilder(
+                "SELECT id, quantity, type, unit, creation_datetime " +
+                "FROM stock_movement WHERE id_ingredient = ? ");
+        List<Object> params = new ArrayList<>();
+        params.add(ingredientId);
+        if (from != null) {
+            sql.append("AND creation_datetime >= ? ");
+            params.add(Timestamp.from(from));
+        }
+        if (to != null) {
+            sql.append("AND creation_datetime <= ? ");
+            params.add(Timestamp.from(to));
+        }
+        sql.append("ORDER BY creation_datetime");
+        try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) {
+                ps.setObject(i + 1, params.get(i));
+            }
             ResultSet rs = ps.executeQuery();
             List<StockMovement> list = new ArrayList<>();
             while (rs.next()) {
-                StockValue sv = new StockValue(
-                        rs.getDouble("quantity"),
-                        UnitTypeEnum.valueOf(rs.getString("unit"))
-                );
-                StockMovement sm = new StockMovement(
-                        rs.getInt("id"),
-                        sv,
-                        MovementTypeEnum.valueOf(rs.getString("type")),
-                        rs.getTimestamp("creation_datetime").toInstant()
-                );
-                list.add(sm);
+                list.add(mapStockMovement(rs));
             }
             return list;
         }
+    }
+
+    private StockMovement mapStockMovement(ResultSet rs) throws SQLException {
+        StockValue sv = new StockValue(
+                rs.getDouble("quantity"),
+                UnitTypeEnum.valueOf(rs.getString("unit"))
+        );
+        return new StockMovement(
+                rs.getInt("id"),
+                sv,
+                MovementTypeEnum.valueOf(rs.getString("type")),
+                rs.getTimestamp("creation_datetime").toInstant()
+        );
     }
 
     Ingredient mapIngredient(ResultSet rs) throws SQLException {
