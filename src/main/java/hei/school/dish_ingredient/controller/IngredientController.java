@@ -14,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/ingredients")
+@CrossOrigin(origins = "*")
 public class IngredientController {
 
     private final IngredientService ingredientService;
