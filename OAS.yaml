@@ -56,6 +56,39 @@ paths:
         '404':
           description: Ingredient not found.
 
+  /ingredients/{id}/stock:
+    get:
+      summary: Get ingredient stock level
+      description: Returns the current stock value of a specific ingredient.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the ingredient.
+          schema:
+            type: integer
+        - name: at
+          in: query
+          description: The timestamp to check the stock at (ISO 8601 format).
+          schema:
+            type: string
+            format: date-time
+        - name: unit
+          in: query
+          description: The unit to return the stock in.
+          schema:
+            type: string
+            enum: [PCS, KG, L]
+      responses:
+        '200':
+          description: Stock value retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockValue'
+        '404':
+          description: Ingredient not found.
+
 components:
   schemas:
     Ingredient:
