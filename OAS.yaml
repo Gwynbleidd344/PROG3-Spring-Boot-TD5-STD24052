@@ -89,6 +89,20 @@ paths:
         '404':
           description: Ingredient not found.
 
+  /dishes:
+    get:
+      summary: Retrieve all dishes
+      description: Returns a list of all dishes in the system.
+      responses:
+        '200':
+          description: List of dishes retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dish'
+
 components:
   schemas:
     Ingredient:
