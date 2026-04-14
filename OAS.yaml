@@ -35,6 +35,27 @@ paths:
                 items:
                   $ref: '#/components/schemas/Ingredient'
 
+  /ingredients/{id}:
+    get:
+      summary: Retrieve an ingredient by ID
+      description: Returns a single ingredient based on the provided unique identifier.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the ingredient.
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ingredient found and retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+        '404':
+          description: Ingredient not found.
+
 components:
   schemas:
     Ingredient:
