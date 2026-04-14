@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: Dish Ingredient API
+  version: 1.0.0
+  description: API for managing ingredients and their stock movements.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /ingredients:
+    get:
+      summary: Retrieve a list of ingredients
+      description: Returns a paginated list of ingredients, optionally filtered by name, category, or associated dish name.
+      parameters:
+        - name: page
+          in: query
+          description: The page number to retrieve (1-indexed).
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: The number of elements per page.
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: A list of ingredients retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingredient'
+
+components:
+  schemas:
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Carrot"
+        price:
+          type: number
+          format: double
+          example: 2.5
+        category:
+          type: string
+          enum: [VEGETABLE, ANIMAL, MARINE, DAIRY, OTHER]
+          example: "VEGETABLE"
+        stockMovementList:
+          type: array
+          items:
+            type: object
