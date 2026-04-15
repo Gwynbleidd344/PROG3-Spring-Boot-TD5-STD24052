@@ -103,6 +103,36 @@ paths:
                 items:
                   $ref: '#/components/schemas/Dish'
 
+  /dishes/{id}/ingredients:
+    put:
+      summary: Update dish ingredients
+      description: Updates the list of ingredients associated with a specific dish.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique ID of the dish.
+          schema:
+            type: integer
+      requestBody:
+        description: List of ingredients to associate with the dish.
+        required: false
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Ingredient'
+      responses:
+        '200':
+          description: Dish ingredients updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dish'
+        '404':
+          description: Dish not found.
+
 components:
   schemas:
     Ingredient:
@@ -125,4 +155,71 @@ components:
         stockMovementList:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/StockMovement'
+
+    StockMovement:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        type:
+          type: string
+          enum: [IN, OUT]
+        value:
+          type: object
+          properties:
+            quantity:
+              type: number
+              example: 10.0
+            unit:
+              type: string
+              example: "KG"
+        creationDatetime:
+          type: string
+          format: date-time
+          example: "2026-04-14T10:00:00Z"
+
+    StockValue:
+      type: object
+      properties:
+        quantity:
+          type: number
+          format: double
+          example: 15.5
+        unit:
+          type: string
+          enum: [PCS, KG, L]
+          example: "KG"
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Beef Bourguignon"
+        dishType:
+          type: string
+          enum: [START, MAIN, DESSERT]
+          example: "MAIN"
+        sellingPrice:
+          type: number
+          format: double
+          example: 25.0
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/DishIngredient'
+
+    DishIngredient:
+      type: object
+      properties:
+        ingredient:
+          $ref: '#/components/schemas/Ingredient'
+        quantityRequired:
+          type: number
+          format: double
+          example: 0.2
